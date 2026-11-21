@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>台新 Richart 卡・切換刷速查神器 v4.0</title>
+  
+  <!-- PWA & Action App Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="台新切換刷">
+  <meta name="theme-color" content="#D9232E">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="台新 Richart 卡 3 秒結帳切換速查工具，包含 8 大方案與全通路對比">
+
+  <!-- SVG Data URI Favicon & Apple Touch Icon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%23D9232E'/><path d='M280 80L140 280h110l-30 152 150-200H260l20-152z' fill='%23ffffff'/></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%23D9232E'/><path d='M280 80L140 280h110l-30 152 150-200H260l20-152z' fill='%23ffffff'/></svg>">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            taishin: '#D9232E',
+            chill: '#E91E63',
+            pay: '#D9232E',
+            daily: '#1E88E5',
+            big: '#FF8F00',
+            food: '#FB8C00',
+            digital: '#3F51B5',
+            travel: '#00897B',
+            holiday: '#546E7A',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar & Safe Area Support */
+    body {
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .pb-safe {
+      padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    }
+    .pt-safe {
+      padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col antialiased selection:bg-red-100 selection:text-red-600">
+
+  <!-- App Header -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm pt-safe">
+    <div class="max-w-md mx-auto px-4 py-2.5 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-taishin text-white flex items-center justify-center font-black text-lg shadow-sm shadow-red-200">
+          R
+        </div>
+        <div>
+          <h1 class="text-base font-bold tracking-tight leading-tight text-slate-900">台新 Richart 切換刷</h1>
+          <div class="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <span id="holiday-badge" class="inline-flex items-center gap-1 text-emerald-600 font-medium">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span id="holiday-text">自動偵測中...</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- Status Pill (Today's Selected Plan) -->
+        <button id="btn-today-status" onclick="openTodayPlanModal()" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors border border-slate-200 flex items-center gap-1">
+          <span>今日已切:</span>
+          <span id="status-plan-name" class="text-taishin font-bold">未選取</span>
+          <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+        <!-- Settings Button -->
+        <button onclick="openSettingsModal()" class="p-2 text-slate-500 hover:text-slate-800 rounded-full hover:bg-slate-100 transition-colors" aria-label="設定">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-md w-full mx-auto p-4 pb-safe space-y-4">
+
+    <!-- TAB 1: 🔍 速查 (Search & Hero Card) -->
+    <section id="tab-search" class="space-y-4">
+      <!-- Search Input Bar -->
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input type="text" id="search-input" placeholder="輸入店家/通路名稱 (如: 7-11, 詹記, 蝦皮)..." 
+               class="w-full pl-10 pr-10 py-3.5 bg-white border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-taishin focus:border-transparent text-base font-medium placeholder-slate-400 transition-all"
+               oninput="onSearchInput(this.value)">
+        <button id="btn-clear-search" onclick="clearSearch()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+          <span class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 text-sm font-bold">✕</span>
+        </button>
+      </div>
+
+      <!-- High-Frequency Shortcut Pills -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between text-xs text-slate-500 font-medium px-1">
+          <span>高頻熱門快捷查詢</span>
+          <span class="text-[10px] text-slate-400">點擊秒出解答</span>
+        </div>
+        <div id="shortcut-pills-container" class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar py-1">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Hero Conclusion Area (Dynamic Output) -->
+      <div id="search-results-area" class="space-y-3">
+        <!-- Default Guide State when empty search -->
+        <div id="empty-search-guide" class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 text-center">
+          <div class="w-12 h-12 rounded-full bg-red-50 text-taishin mx-auto flex items-center justify-center text-xl font-bold">
+            ⚡
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base">排隊結帳？3 秒查出最佳方案！</h3>
+            <p class="text-xs text-slate-500 mt-1">請在上欄輸入店家，或點擊上方快捷鍵、下方消費情境：</p>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-2 text-left">
+            <button onclick="filterByCategory('餐飲')" class="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 flex items-center gap-2">
+              <span>🍔</span> 全臺餐飲 / 聚餐
+            </button>
+            <button onclick="filterByCategory('飲料')" class="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 flex items-center gap-2">
+              <span>🧋</span> 手搖飲 / 咖啡
+            </button>
+            <button onclick="filterByCategory('網購')" class="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 flex items-center gap-2">
+              <span>📦</span> 網購 / 數位平台
+            </button>
+            <button onclick="filterByCategory('超商')" class="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 flex items-center gap-2">
+              <span>🏪</span> 7-11 / 全家 / 藥局
+            </button>
+            <button onclick="filterByCategory('百貨')" class="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 flex items-center gap-2">
+              <span>🏬</span> 百貨 / 居家 Outlet
+            </button>
+            <button onclick="filterByCategory('旅遊')" class="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 flex items-center gap-2">
+              <span>✈️</span> 海外 / 機票 / 訂房
+            </button>
+            <button onclick="filterByCategory('交通')" class="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 flex items-center gap-2">
+              <span>⛽</span> 交通 / 高鐵 / 加油
+            </button>
+            <button onclick="filterByCategory('一般')" class="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 flex items-center gap-2">
+              <span>💳</span> 一般實體 / LINE Pay
+            </button>
+          </div>
+        </div>
+
+        <!-- Hero Card & Sub-Cards Slot (Injected by JS) -->
+        <div id="dynamic-results-slot"></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: 🧮 試算 (Multi-Item Calculator) -->
+    <section id="tab-calc" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-slate-900 text-base flex items-center gap-1.5">
+            <span>🧮</span> 今日多筆消費最佳切換試算
+          </h2>
+          <button onclick="clearCalcItems()" class="text-xs text-slate-400 hover:text-red-500 font-medium">清空全部</button>
+        </div>
+        <p class="text-xs text-slate-500">
+          輸入預計刷卡消費項目（依台新規則「單筆無條件捨去」計算點數），系統將為您比較 8 大方案總收益。
+        </p>
+
+        <!-- Calculator Form -->
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+          <div class="grid grid-cols-12 gap-2">
+            <input type="text" id="calc-name" placeholder="項目說明 (如: 詹記聚餐)" class="col-span-7 px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-taishin">
+            <input type="number" id="calc-amount" placeholder="金額 (NT$)" class="col-span-5 px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-taishin">
+          </div>
+          <div class="grid grid-cols-12 gap-2">
+            <select id="calc-store-select" onchange="onCalcStoreSelectChange()" class="col-span-7 px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-taishin">
+              <option value="">-- 或選擇預設通路 --</option>
+              <!-- JS Populates -->
+            </select>
+            <button onclick="addCalcItem()" class="col-span-5 py-2 bg-taishin hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1">
+              <span>＋</span> 加入試算
+            </button>
+          </div>
+        </div>
+
+        <!-- Added Item List -->
+        <div id="calc-items-list" class="space-y-1.5">
+          <!-- JS dynamic renders -->
+        </div>
+      </div>
+
+      <!-- Calculation Outcome Summary -->
+      <div id="calc-summary-card" class="hidden bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <h3 class="font-bold text-slate-900 text-sm border-b border-slate-100 pb-2">切換方案點數比較總覽</h3>
+        <div id="calc-plan-ranks" class="space-y-2">
+          <!-- JS dynamic ranks -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: ⭐ 自訂 (Custom Store Management) -->
+    <section id="tab-custom" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-slate-900 text-base flex items-center gap-1.5">
+            <span>⭐</span> 自訂常用店家
+          </h2>
+          <span class="text-xs text-slate-400">專屬你的消費指南</span>
+        </div>
+        <p class="text-xs text-slate-500">
+          常去但官網沒寫清楚的小店？在此新增自訂店家，搜尋時會優先顯示，亦可釘選至首頁快捷區。
+        </p>
+
+        <!-- Custom Store Form -->
+        <form onsubmit="saveCustomStore(event)" class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">店家名稱 *</label>
+            <input type="text" id="cust-name" required placeholder="如: 阿財彰化肉圓" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-taishin">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">搜尋別名 (逗號隔開)</label>
+              <input type="text" id="cust-alias" placeholder="如: 肉圓, 阿財" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-taishin">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">建議對應方案 *</label>
+              <select id="cust-plan" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-taishin">
+                <option value="好饗刷">好饗刷 (餐飲 3.3%)</option>
+                <option value="Pay著刷">Pay著刷 (台新Pay 3.8%)</option>
+                <option value="Chill刷">Chill刷 (精選高趴)</option>
+                <option value="天天刷">天天刷 (日常 3.3%)</option>
+                <option value="大筆刷">大筆刷 (百貨 3.3%)</option>
+                <option value="數趣刷">数趣刷 (網購 3.3%)</option>
+                <option value="玩旅刷">玩旅刷 (海外/旅遊 3.3%)</option>
+                <option value="假日刷">假日刷 (假日 2%)</option>
+                <option value="一般消費">一般消費 (0.3%)</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">回饋率 (%) *</label>
+              <input type="number" step="0.1" id="cust-rate" value="3.3" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-taishin">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">支付/限制說明</label>
+              <input type="text" id="cust-note" placeholder="如: 需付現除外/綁Pay" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-taishin">
+            </div>
+          </div>
+          <div class="flex items-center justify-between pt-1">
+            <label class="flex items-center gap-1.5 text-xs text-slate-700 font-medium cursor-pointer">
+              <input type="checkbox" id="cust-pin" class="rounded text-taishin focus:ring-taishin">
+              <span>釘選至首頁極速快捷區</span>
+            </label>
+            <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-colors">
+              保存店家
+            </button>
+          </div>
+        </form>
+
+        <!-- Custom Stores List -->
+        <div class="space-y-2 pt-2">
+          <h3 class="font-bold text-slate-800 text-xs">已儲存的自訂店家列表</h3>
+          <div id="custom-stores-list" class="space-y-1.5">
+            <!-- JS Renders -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: 📋 總表 (Plan Reference Directory) -->
+    <section id="tab-summary" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-slate-900 text-base flex items-center gap-1.5">
+            <span>📋</span> 8 大方案與全通路對照表
+          </h2>
+          <span class="text-xs text-slate-400">完整條款權益</span>
+        </div>
+        <p class="text-xs text-slate-500">
+          點擊方案展開可檢視所有適用通路與注意事項：
+        </p>
+
+        <!-- Accordion Cards -->
+        <div id="plans-accordion-container" class="space-y-2">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation Tab Bar -->
+  <nav class="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-lg">
+    <div class="max-w-md mx-auto grid grid-cols-4 h-14" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
+      <button onclick="switchTab('search')" id="nav-btn-search" class="flex flex-col items-center justify-center text-taishin font-bold transition-colors">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <span class="text-[11px]">速查</span>
+      </button>
+      <button onclick="switchTab('calc')" id="nav-btn-calc" class="flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m-6 4h6m-6 4h6M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        <span class="text-[11px]">試算</span>
+      </button>
+      <button onclick="switchTab('custom')" id="nav-btn-custom" class="flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+        <span class="text-[11px]">自訂</span>
+      </button>
+      <button onclick="switchTab('summary')" id="nav-btn-summary" class="flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+        <span class="text-[11px]">總表</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MODAL: Settings ⚙️ -->
+  <div id="modal-settings" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl animate-fade-in">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-1.5">
+          <span>⚙️</span> 設定與帳戶偏好
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="space-y-3.5 text-xs">
+        <!-- Level 2 Toggle -->
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-slate-800">Level 2 自扣開啟</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">關閉時全卡權益降為 0.3% 一般消費</div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="setting-level2" checked onchange="toggleLevel2(this.checked)" class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-taishin"></div>
+          </label>
+        </div>
+
+        <!-- Holiday Override Toggle -->
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-slate-800">手動覆寫假日狀態</div>
+            <div class="text-[10px] text-slate-500 mt-0.5" id="holiday-override-desc">目前狀態：自動偵測</div>
+          </div>
+          <button onclick="toggleHolidayOverride()" class="px-2.5 py-1 bg-white border border-slate-300 rounded-lg font-bold text-slate-700 hover:bg-slate-100">
+            切換假日狀態
+          </button>
+        </div>
+
+        <!-- Export / Import Backup -->
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+          <div class="font-bold text-slate-800">自訂店家備份與還原</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="exportCustomBackup()" class="py-1.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-700 hover:bg-slate-100">
+              📥 匯出 JSON
+            </button>
+            <button onclick="document.getElementById('import-file-input').click()" class="py-1.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-700 hover:bg-slate-100">
+              📤 匯入 JSON
+            </button>
+            <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="importCustomBackup(event)">
+          </div>
+        </div>
+
+        <!-- Reset Button -->
+        <button onclick="resetTodayPlan()" class="w-full py-2 bg-red-50 text-taishin border border-red-200 hover:bg-red-100 rounded-xl font-bold transition-colors">
+          重置今日已切方案紀錄
+        </button>
+      </div>
+
+      <div class="text-[10px] text-center text-slate-400 pt-1">
+        台新 Richart 卡切換神器 v4.0 (結帳極速版)
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Change Today Plan Modal -->
+  <div id="modal-today-plan" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-1.5">
+          <span>📌</span> 設定今日已切換方案
+        </h3>
+        <button onclick="closeTodayPlanModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-500">
+        選擇您今天在 Richart Life App 中已設定切換的方案，系統會在查詢時即時提示利差：
+      </p>
+
+      <div class="grid grid-cols-2 gap-2 text-xs font-bold" id="today-plan-options-grid">
+        <!-- Injected by JS -->
+      </div>
+
+      <button onclick="setTodayPlan('未選取')" class="w-full py-2 bg-slate-100 text-slate-600 rounded-xl font-medium hover:bg-slate-200 transition-colors text-xs">
+        清除今日紀錄 (設為未選擇)
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript Core Logic -->
+  <script>
+    /* ==========================================================================
+       1. DATASETS & FULL CATALOG (100% Richart Card Switched Plans)
+       ========================================================================== */
+    const TAISHIN_PLANS = {
+      'Chill刷': {
+        name: 'Chill刷',
+        colorClass: 'bg-gradient-to-r from-pink-600 to-purple-600 text-white',
+        badgeBg: 'bg-pink-100 text-pink-700 border-pink-200',
+        heroBg: 'bg-slate-900 text-white border-pink-500',
+        limit: '加碼上限 300 點/月 (刷 NT$ 3,000 ~ 9,090 封頂)',
+        items: [
+          { name: '詹記麻辣火鍋', alias: '詹記', rate: 10.0, note: '歡聚微醺 10% (需綁指定支付/刷卡)', category: '餐飲' },
+          { name: '萬客什鍋', alias: '萬客', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: '海底撈', alias: '海底撈火鍋', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: '屋馬燒肉', alias: '屋馬', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: '茶六燒肉堂', alias: '茶六', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: '新村站著吃', alias: '站著吃燒肉', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: '燒肉政宗', alias: '政宗燒肉', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: '碳佐麻里', alias: '碳佐', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: '雞湯大叔', alias: '雞湯大叔', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: 'gonna共樂遊', alias: 'gonna', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: 'BRUN 不然', alias: '不然早午餐', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: 'CAFE ACME', alias: 'acme', rate: 10.0, note: '歡聚微醺 10%', category: '飲料' },
+          { name: 'The Antipodean', alias: 'TA早午餐', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: '貳樓', alias: 'Second Floor', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: '樂子 the Diner', alias: 'the diner', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: 'Fake Sober', alias: 'Fake Sober Bar', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: 'Draft Land', alias: 'DraftLand', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: '臺虎精釀', alias: '啜飲室, 臺虎', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: 'ABV系列', alias: 'ABV閣樓, ABV地中海, ABV加勒比海', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: 'Bar TCRC', alias: 'TCRC', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: 'Bar Home', alias: 'BarHome', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: 'Phowa', alias: 'Phowa Bar', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: 'MOONROCK', alias: 'MOON ROCK', rate: 10.0, note: '歡聚微醺 10%', category: '餐飲' },
+          { name: '台灣代駕', alias: '代駕', rate: 10.0, note: '10/1起新增歡聚 10%', category: '交通' },
+          { name: 'Motodomo 愛車管家', alias: '愛車管家', rate: 10.0, note: '10/1起新增歡聚 10%', category: '交通' },
+          
+          { name: '50嵐', alias: '五十嵐', rate: 10.0, note: '日常續命 10%', category: '飲料' },
+          { name: '得正', alias: '得正烏龍茶', rate: 10.0, note: '日常續命 10%', category: '飲料' },
+          { name: '五桐號', alias: '五桐號 WooTea', rate: 10.0, note: '日常續命 10%', category: '飲料' },
+          { name: '龜記', alias: '龜記茗品', rate: 10.0, note: '日常續命 10%', category: '飲料' },
+          { name: 'UG TEA', alias: 'UGTEA', rate: 10.0, note: '日常續命 10%', category: '飲料' },
+          { name: '叮哥茶飲', alias: '叮哥', rate: 10.0, note: '日常續命 10%', category: '飲料' },
+          { name: 'CAFE!N', alias: '硬咖啡', rate: 10.0, note: '日常續命 10%', category: '飲料' },
+          { name: '%Arabica', alias: '阿拉比卡咖啡', rate: 10.0, note: '日常續命 10%', category: '飲料' },
+          { name: 'COMPOSE COFFEE', alias: 'COMPOSE', rate: 10.0, note: '日常續命 10%', category: '飲料' },
+          
+          { name: '饗饗 INPARADISE', alias: '饗饗', rate: 5.0, note: '約會犒賞 5%', category: '餐飲' },
+          { name: 'NAGOMI', alias: 'NAGOMI和食', rate: 5.0, note: '約會犒賞 5%', category: '餐飲' },
+
+          { name: 'WEVERSE', alias: 'Weverse Shop', rate: 5.0, note: '應援追星 5%', category: '網購' },
+          { name: 'K-MONSTAR', alias: 'KMONSTAR', rate: 5.0, note: '應援追星 5%', category: '網購' },
+          { name: '微樂客', alias: 'WillMusic', rate: 5.0, note: '應援追星 5%', category: '網購' },
+          { name: '五大唱片', alias: '5music', rate: 5.0, note: '應援追星 5%', category: '網購' },
+          { name: '仙女樹', alias: 'Fairytree', rate: 5.0, note: '應援追星 5%', category: '網購' },
+          { name: 'FANME', alias: 'FAN ME', rate: 5.0, note: '應援追星 5%', category: '網購' },
+          { name: 'NOL', alias: 'NOL Store', rate: 5.0, note: '應援追星 5%', category: '網購' },
+
+          { name: '巴哈姆特', alias: '動畫瘋', rate: 5.0, note: '熬夜追更 5%', category: '網購' },
+          { name: 'BOOK WALKER', alias: 'BOOKWALKER', rate: 5.0, note: '熬夜追更 5%', category: '網購' },
+          { name: 'Animate', alias: '安利美特', rate: 5.0, note: '熬夜追更 5%', category: '網購' },
+          { name: '樂天KOBO', alias: 'Kobo', rate: 5.0, note: '熬夜追更 5%', category: '網購' },
+          { name: 'Readmoo讀墨', alias: '讀墨', rate: 5.0, note: '熬夜追更 5%', category: '網購' },
+          { name: 'Netflix', alias: '網飛', rate: 5.0, note: '熬夜追更 5%', category: '網購' },
+          { name: 'Disney+', alias: '迪士尼+', rate: 5.0, note: '熬夜追更 5%', category: '網購' },
+          { name: '愛爾達', alias: 'ELTA', rate: 5.0, note: '熬夜追更 5%', category: '網購' },
+
+          { name: 'Pinkoi', alias: '品品', rate: 5.0, note: '10/1起新增數位外掛 5%', category: '網購' },
+          { name: 'Apple 直營', alias: 'Apple 官網, Apple Store', rate: 3.3, note: '數位外掛 3.3%', category: '網購' },
+          { name: 'Studio A', alias: 'Straight A, 晶實', rate: 3.3, note: '數位外掛 3.3%', category: '百貨' },
+          { name: 'DJI', alias: '大疆', rate: 3.3, note: '數位外掛 3.3%', category: '網購' },
+          { name: 'Insta360', alias: '全景相機', rate: 3.3, note: '數位外掛 3.3%', category: '網購' },
+          { name: 'GoPro', alias: 'GoPro Taiwan', rate: 3.3, note: '數位外掛 3.3%', category: '網購' },
+          
+          { name: '好好生醫', alias: 'BetterHealth', rate: 5.0, note: '營養補給 5%', category: '網購' },
+          { name: 'POPCARE好在乎', alias: '好在乎', rate: 5.0, note: '營養補給 5%', category: '網購' },
+          { name: '營養師輕食', alias: '輕食營養師', rate: 5.0, note: '營養補給 5%', category: '網購' },
+          { name: 'VITABOX', alias: '維他盒', rate: 5.0, note: '營養補給 5%', category: '網購' },
+          { name: 'MYPROTEIN', alias: '英國健身蛋白', rate: 5.0, note: '營養補給 5%', category: '網購' },
+          { name: 'UrMart優馬選品', alias: 'UrMart', rate: 5.0, note: '營養補給 5%', category: '網購' },
+
+          { name: 'Anytime Fitness', alias: '24HR健身房', rate: 5.0, note: '體態養成 5%', category: '一般' },
+          { name: '健身工廠', alias: '健工', rate: 5.0, note: '體態養成 5%', category: '一般' },
+          { name: 'World Gym', alias: 'WG', rate: 5.0, note: '體態養成 5%', category: '一般' },
+          { name: '超核心 Hypercore', alias: '超核心', rate: 5.0, note: '體態養成 5%', category: '一般' },
+          { name: 'KX PILATES', alias: 'KX皮拉提斯', rate: 5.0, note: '體態養成 5%', category: '一般' },
+          { name: '虎鐵健身', alias: '虎鐵皮拉提斯', rate: 5.0, note: '體態養成 5%', category: '一般' },
+          { name: '17FIT', alias: '17FIT線上預約', rate: 5.0, note: '體態養成 5%', category: '網購' },
+
+          { name: 'Adidas', alias: '愛迪達', rate: 5.0, note: '運動品牌 5%', category: '百貨' },
+          { name: 'New Balance', alias: 'NB', rate: 5.0, note: '運動品牌 5%', category: '百貨' },
+          { name: 'PUMA', alias: '彪馬', rate: 5.0, note: '運動品牌 5%', category: '百貨' },
+          { name: 'Onitsuka Tiger', alias: '鬼塚虎', rate: 5.0, note: '運動品牌 5%', category: '百貨' },
+          { name: 'Nike', alias: '耐吉', rate: 5.0, note: '運動品牌 5%', category: '百貨' },
+          { name: 'HOKA', alias: 'Hoka One One', rate: 5.0, note: '運動品牌 5%', category: '百貨' },
+          { name: 'Salomon', alias: '所羅門', rate: 5.0, note: '運動品牌 5%', category: '百貨' },
+          { name: 'lululemon', alias: '露露樂檬', rate: 5.0, note: '運動品牌 5%', category: '百貨' }
+        ]
+      },
+
+      'Pay著刷': {
+        name: 'Pay著刷',
+        colorClass: 'bg-red-600 text-white',
+        badgeBg: 'bg-red-100 text-red-700 border-red-200',
+        heroBg: 'bg-red-700 text-white border-red-400',
+        limit: '加碼上限 300 點/月 (3.8%適用通路封頂約 NT$ 8,571)',
+        items: [
+          { name: '7-11', alias: '統一超商, 711, 小七', rate: 3.8, note: '⚠️ 必綁台新Pay！實體卡/ApplePay直刷無回饋', category: '超商' },
+          { name: '全家', alias: '全家超商, FamilyMart', rate: 3.8, note: '⚠️ 必綁台新Pay！實體卡/ApplePay直刷無回饋', category: '超商' },
+          { name: '新光三越', alias: '新光', rate: 3.8, note: '必綁台新 Pay 享 3.8%', category: '百貨' },
+          { name: 'Richart Mart', alias: 'Richart商城', rate: 3.8, note: '必綁台新 Pay 享 3.8%', category: '網購' },
+          { name: '康是美', alias: 'COSMED', rate: 3.8, note: '必綁台新 Pay 享 3.8%', category: '超商' },
+          { name: 'IKEA', alias: '宜家家居', rate: 3.8, note: '必綁台新 Pay 享 3.8%', category: '百貨' },
+          { name: 'NET', alias: 'NET服飾', rate: 3.8, note: '必綁台新 Pay 享 3.8%', category: '百貨' },
+          { name: '神腦國際', alias: '神腦', rate: 3.8, note: '台新 Pay (含TWQR/台灣Pay) 3.8%', category: '百貨' },
+          { name: '燦坤', alias: '燦坤3C', rate: 3.8, note: '台新 Pay (含TWQR/台灣Pay) 3.8%', category: '百貨' },
+          { name: '全國電子', alias: '全國電', rate: 3.8, note: '台新 Pay (含TWQR/台灣Pay) 3.8%', category: '百貨' },
+          { name: '麥當勞', alias: 'McDonalds, M字腿', rate: 3.8, note: '台新 Pay (含TWQR/台灣Pay) 3.8%', category: '餐飲' },
+          { name: '美廉社', alias: 'Simple Mart', rate: 3.8, note: '台新 Pay (含TWQR/台灣Pay) 3.8%', category: '超商' },
+          { name: '大樹藥局', alias: '大樹', rate: 3.8, note: '台新 Pay (含TWQR/台灣Pay) 3.8%', category: '超商' },
+          
+          { name: '日本 LAWSON', alias: '羅森, LAWSON', rate: 3.8, note: '台新Pay+ 日韓交易免1.5%手續費享3.8%', category: '旅遊' },
+          { name: '日本 BicCamera', alias: 'Bic Camera', rate: 3.8, note: '台新Pay+ 日韓交易免1.5%手續費享3.8%', category: '旅遊' },
+          { name: '韓國 GS25', alias: 'GS25', rate: 3.8, note: '台新Pay+ 日韓交易免1.5%手續費享3.8%', category: '旅遊' },
+          { name: '韓國 DAISO', alias: '韓國大創', rate: 3.8, note: '台新Pay+ 日韓交易免1.5%手續費享3.8%', category: '旅遊' },
+
+          { name: 'LINE Pay 通路', alias: 'LINE Pay, 連線支付', rate: 2.3, note: '綁定 LINE Pay 掃碼享 2.3%', category: '一般' },
+          { name: '全盈+Pay 通路', alias: '全盈支付, 全盈', rate: 2.3, note: '7/8起綁定全盈+Pay 享 2.3%', category: '一般' }
+        ]
+      },
+
+      '天天刷': {
+        name: '天天刷',
+        colorClass: 'bg-blue-600 text-white',
+        badgeBg: 'bg-blue-100 text-blue-700 border-blue-200',
+        heroBg: 'bg-blue-700 text-white border-blue-400',
+        limit: '加碼 3% 上限 300 點/月 (刷 NT$ 10,000 封頂)',
+        items: [
+          { name: '7-11 (天天刷)', alias: '小七天天刷', rate: 3.3, note: '⚠️ 限綁台新Pay，直刷實體卡無回饋', category: '超商' },
+          { name: '全家 (天天刷)', alias: '全家天天刷', rate: 3.3, note: '⚠️ 限綁台新Pay，直刷實體卡無回饋', category: '超商' },
+          { name: '萬家福', alias: '萬家福超市', rate: 3.3, note: '日常採買 3.3%', category: '超商' },
+          { name: '樂家康', alias: '樂家康', rate: 3.3, note: '日常採買 3.3%', category: '超商' },
+          { name: '大買家', alias: '大買家量販', rate: 3.3, note: '日常採買 3.3%', category: '超商' },
+          { name: '唐吉訶德', alias: 'DON DON DONKI, DONKI', rate: 3.3, note: '日常採買 3.3%', category: '超商' },
+          { name: 'LOPIA', alias: '日本Lopia超市', rate: 3.3, note: '日常採買 3.3%', category: '超商' },
+          { name: '智生活', alias: 'SmartLife', rate: 3.3, note: '7/8起新增社區服務 3.3%', category: '一般' },
+
+          { name: '臺鐵', alias: '台鐵, 火車', rate: 3.3, note: '通勤交通 3.3%', category: '交通' },
+          { name: '高鐵', alias: '台灣高鐵', rate: 3.3, note: '通勤交通 3.3%', category: '交通' },
+          { name: '台灣大車隊', alias: '55688', rate: 3.3, note: '通勤交通 3.3%', category: '交通' },
+          { name: 'LINEGO', alias: 'LINE TAXI', rate: 3.3, note: '通勤交通 3.3%', category: '交通' },
+          { name: 'Yoxi', alias: '和泰Yoxi', rate: 3.3, note: '通勤交通 3.3%', category: '交通' },
+          { name: 'Uber 叫車', alias: 'Uber Taxi, 烏伯', rate: 3.3, note: '通勤交通 3.3%', category: '交通' },
+          { name: '台灣Bolt', alias: 'Bolt', rate: 3.3, note: '通勤交通 3.3%', category: '交通' },
+
+          { name: '中油直營', alias: '中油, 台灣中油', rate: 3.3, note: '⚠️ 限直營站 (加油槍有紅藍標誌)', category: '交通' },
+          { name: '全國加油站', alias: '全國加油', rate: 3.3, note: '加油 3.3%', category: '交通' },
+          { name: '全國特急電', alias: '特急電', rate: 3.3, note: '充電 3.3%', category: '交通' },
+          { name: '源點 EVOASIS', alias: 'EVOASIS', rate: 3.3, note: '充電 3.3%', category: '交通' },
+          { name: '華城電能 EVALUE', alias: 'EVALUE', rate: 3.3, note: '充電 3.3%', category: '交通' },
+          { name: 'USPACE', alias: '悠樂空間', rate: 3.3, note: '停車 3.3%', category: '交通' },
+          { name: 'Autopass', alias: '車麻吉', rate: 3.3, note: '車牌辨識停車加油 3.3%', category: '交通' },
+
+          { name: '寶雅', alias: 'POYA', rate: 3.3, note: '藥妝藥局 3.3%', category: '超商' },
+          { name: '康是美 (天天刷)', alias: 'Cosmed天天刷', rate: 3.3, note: '實體/線上 3.3%', category: '超商' },
+          { name: '屈臣氏', alias: 'Watsons', rate: 3.3, note: '藥妝藥局 3.3%', category: '超商' },
+          { name: '杏一醫療', alias: '杏一', rate: 3.3, note: '藥妝藥局 3.3%', category: '超商' },
+          { name: '大樹藥局 (天天刷)', alias: '大樹天天刷', rate: 3.3, note: '藥妝藥局 3.3%', category: '超商' },
+          { name: '丁丁藥局', alias: '丁丁', rate: 3.3, note: '藥妝藥局 3.3%', category: '超商' },
+          { name: '佑全保健藥妝', alias: '佑全', rate: 3.3, note: '藥妝藥局 3.3%', category: '超商' },
+          { name: '健康人生藥局', alias: '健康人生', rate: 3.3, note: '藥妝藥局 3.3%', category: '超商' }
+        ]
+      },
+
+      '大筆刷': {
+        name: '大筆刷',
+        colorClass: 'bg-amber-600 text-white',
+        badgeBg: 'bg-amber-100 text-amber-700 border-amber-200',
+        heroBg: 'bg-amber-700 text-white border-amber-400',
+        limit: '加碼 3% 上限 300 點/月 (刷 NT$ 10,000 封頂)',
+        items: [
+          { name: '新光三越 (大筆刷)', alias: 'skm pay, 新光三越百貨', rate: 3.3, note: '指定百貨 3.3% (可綁skm pay)', category: '百貨' },
+          { name: '遠東百貨', alias: '遠百, 大遠百', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '遠東SOGO', alias: 'SOGO, 太平洋SOGO', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '漢神巨蛋', alias: '漢神巨蛋購物廣場', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '漢神百貨', alias: '高雄漢神', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '漢神洲際', alias: '台中漢神洲際', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '微風廣場', alias: '微風信義, 微風南山, 微風南京', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '台北101', alias: '101購物中心', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '遠東巨城', alias: 'Big City, 新竹巨城', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '廣三SOGO', alias: '廣三', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '南紡購物中心', alias: '南紡', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '誠品生活', alias: '誠品書店, 誠品線上', rate: 3.3, note: '含誠品線上購物 3.3%', category: '百貨' },
+          { name: '京站', alias: '京站時尚廣場', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '三創生活', alias: '三創園區', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '夢時代', alias: '高雄夢時代', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '統一時代', alias: 'DREAM PLAZA, 統一時代台北/高雄', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: '中友百貨', alias: '台中中友', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          { name: 'LaLaport', alias: '台中LaLaport, 南港LaLaport', rate: 3.3, note: '指定百貨 3.3%', category: '百貨' },
+          
+          { name: 'MITSUI OUTLET PARK', alias: '三井Outlet, 林口Outlet, 台中港Outlet, 台南Outlet', rate: 3.3, note: '指定Outlet 3.3%', category: '百貨' },
+          { name: '華泰名品城', alias: 'GLORIA OUTLETS', rate: 3.3, note: '指定Outlet 3.3%', category: '百貨' },
+          { name: 'SKM Park Outlets', alias: 'SKM Park草衙', rate: 3.3, note: '指定Outlet 3.3%', category: '百貨' },
+
+          { name: 'IKEA (大筆刷)', alias: '宜家大筆刷', rate: 3.3, note: '居家裝修 3.3%', category: '百貨' },
+          { name: '特力屋', alias: 'TLW', rate: 3.3, note: '居家裝修 3.3%', category: '百貨' },
+          { name: 'HOLA', alias: '特力和樂', rate: 3.3, note: '居家裝修 3.3%', category: '百貨' },
+          { name: '宜得利', alias: 'NITORI', rate: 3.3, note: '居家裝修 3.3%', category: '百貨' },
+          { name: '瑪黑家居', alias: 'Marais', rate: 3.3, note: '居家裝修 3.3%', category: '百貨' },
+
+          { name: 'UNIQLO', alias: '優衣庫', rate: 3.3, note: '時尚品味 3.3%', category: '百貨' },
+          { name: 'GU', alias: '極優', rate: 3.3, note: '時尚品味 3.3%', category: '百貨' },
+          { name: 'ZARA', alias: '颯拉', rate: 3.3, note: '時尚品味 3.3%', category: '百貨' },
+          { name: 'NET (大筆刷)', alias: 'NET大筆刷', rate: 3.3, note: '時尚品味 3.3%', category: '百貨' }
+        ]
+      },
+
+      '好饗刷': {
+        name: '好饗刷',
+        colorClass: 'bg-orange-500 text-white',
+        badgeBg: 'bg-orange-100 text-orange-700 border-orange-200',
+        heroBg: 'bg-orange-600 text-white border-orange-400',
+        limit: '加碼 3% 上限 300 點/月 (刷 NT$ 10,000 封頂)',
+        items: [
+          { name: '全臺餐飲小吃', alias: '全台餐飲, 餐廳, 火鍋, 燒肉, 咖啡廳, 小吃, 肯德基, 摩斯, 星巴克, 路易莎, 壽司郎, 藏壽司, 鼎泰豐, 八方雲集, 石二鍋', rate: 3.3, note: '全臺餐飲 3.3% (⚠️ 不含餐券、百貨街無獨立簽單之櫃位)', category: '餐飲' },
+          { name: '王品瘋 Pay', alias: '王品瘋Pay, 王品集團', rate: 3.3, note: '王品瘋Pay 3.3%', category: '餐飲' },
+          { name: 'Uber Eats', alias: '吳伯毅外送', rate: 3.3, note: '外送平台 3.3%', category: '餐飲' },
+          { name: 'foodpanda', alias: '熊貓外送', rate: 3.3, note: '外送平台 3.3%', category: '餐飲' },
+
+          { name: '拓元售票', alias: 'tixCraft', rate: 3.3, note: '購票娛樂 3.3%', category: '網購' },
+          { name: 'KKTIX', alias: 'KKTIX售票', rate: 3.3, note: '購票娛樂 3.3%', category: '網購' },
+          { name: '年代售票', alias: 'Era Ticket', rate: 3.3, note: '購票娛樂 3.3%', category: '網購' },
+          { name: '寬宏售票', alias: 'Kham Ticket', rate: 3.3, note: '購票娛樂 3.3%', category: '網購' },
+          { name: 'OPENTIX', alias: '兩廳院文化生活', rate: 3.3, note: '購票娛樂 3.3%', category: '網購' },
+          { name: 'FunNow', alias: 'Fun Now', rate: 3.3, note: '購票娛樂 3.3%', category: '網購' },
+
+          { name: '錢櫃', alias: 'Cashbox KTV', rate: 3.3, note: '指定KTV 3.3%', category: '餐飲' },
+          { name: '好樂迪', alias: 'Holiday KTV', rate: 3.3, note: '指定KTV 3.3%', category: '餐飲' },
+          { name: 'ONCOR', alias: 'ONCOR響宴', rate: 3.3, note: '指定KTV 3.3%', category: '餐飲' },
+          { name: 'sing!go', alias: '聚唱派對', rate: 3.3, note: '指定KTV 3.3%', category: '餐飲' },
+          { name: '享溫馨', alias: '享溫馨KTV', rate: 3.3, note: '指定KTV 3.3%', category: '餐飲' },
+
+          { name: '晶華國際酒店集團', alias: '晶華酒店, 捷絲旅', rate: 3.3, note: '指定飯店餐飲住宿 3.3% (⚠️不含住宿券餐券)', category: '餐飲' },
+          { name: '雲朗觀光', alias: '君品, 雲品', rate: 3.3, note: '指定飯店 3.3%', category: '餐飲' },
+          { name: '萬豪國際集團飯店', alias: '台北萬豪, 喜來登, W Hotel', rate: 3.3, note: '指定飯店 3.3%', category: '餐飲' },
+          { name: '煙波國際觀光集團', alias: '煙波大飯店', rate: 3.3, note: '指定飯店 3.3%', category: '餐飲' },
+          { name: '老爺酒店集團', alias: '老爺大酒店', rate: 3.3, note: '指定飯店 3.3%', category: '餐飲' },
+          { name: '福華集團', alias: '福華大飯店', rate: 3.3, note: '指定飯店 3.3%', category: '餐飲' },
+          { name: '漢來飯店事業群', alias: '漢來大飯店', rate: 3.3, note: '指定飯店 3.3%', category: '餐飲' },
+          { name: '台北君悅酒店', alias: 'Grand Hyatt', rate: 3.3, note: '指定飯店 3.3%', category: '餐飲' },
+          { name: '高雄洲際酒店', alias: 'InterContinental', rate: 3.3, note: '指定飯店 3.3%', category: '餐飲' },
+          { name: '臺中勤美洲際酒店', alias: '勤美洲際', rate: 3.3, note: '指定飯店 3.3%', category: '餐飲' },
+          { name: '礁溪寒沐酒店', alias: '寒沐', rate: 3.3, note: '指定飯店 3.3%', category: '餐飲' }
+        ]
+      },
+
+      '數趣刷': {
+        name: '數趣刷',
+        colorClass: 'bg-indigo-600 text-white',
+        badgeBg: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+        heroBg: 'bg-indigo-700 text-white border-indigo-400',
+        limit: '加碼 3% 上限 300 點/月 (刷 NT$ 10,000 封頂)',
+        items: [
+          { name: '蝦皮購物', alias: '蝦皮, Shopee, 蝦皮商城', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+          { name: 'momo購物網', alias: 'momo, 摩摩', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+          { name: '酷澎', alias: 'Coupang', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+          { name: 'PChome', alias: 'PChome24h', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+          { name: '淘寶', alias: 'Taobao, 天貓', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+          { name: 'Amazon', alias: '亞馬遜', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+          { name: '東森購物', alias: 'ETMall', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+          { name: '博客來', alias: 'Books', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+          { name: 'PayEasy', alias: 'Pay Easy', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+          { name: 'iHerb', alias: 'iherb保健', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+          { name: 'SHEIN', alias: '希音', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+          { name: 'Farfetch', alias: '發發奇', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+          { name: 'Olive Young', alias: '韓系美妝網購', rate: 3.3, note: '網購平台 3.3%', category: '網購' },
+
+          { name: '知識衛星', alias: 'SAT Knowledge', rate: 3.3, note: '線上課程 3.3%', category: '網購' },
+          { name: 'Amazing Talker', alias: 'AmazingTalker', rate: 3.3, note: '線上課程 3.3%', category: '網購' },
+          { name: 'Tutor ABC', alias: 'TutorABC', rate: 3.3, note: '線上課程 3.3%', category: '網購' },
+          { name: 'Hahow', alias: '好學校', rate: 3.3, note: '線上課程 3.3%', category: '網購' },
+          { name: 'PressPlay', alias: 'PPA', rate: 3.3, note: '線上課程 3.3%', category: '網購' },
+
+          { name: 'MyCard', alias: '智冠MyCard', rate: 3.3, note: '遊戲影音 3.3%', category: '網購' },
+          { name: '遊戲橘子', alias: 'Gamania', rate: 3.3, note: '遊戲影音 3.3%', category: '網購' },
+          { name: 'Steam', alias: '蒸汽平台', rate: 3.3, note: '遊戲影音 3.3%', category: '網購' },
+          { name: 'PlayStation', alias: 'PS Store, PSN', rate: 3.3, note: '遊戲影音 3.3%', category: '網購' },
+          { name: 'Nintendo', alias: '任天堂, Switch eShop', rate: 3.3, note: '遊戲影音 3.3%', category: '網購' },
+
+          { name: 'ChatGPT', alias: 'OpenAI', rate: 3.3, note: 'AI 服務訂閱 3.3%', category: '網購' },
+          { name: 'Notion', alias: 'Notion AI', rate: 3.3, note: 'AI 服務訂閱 3.3%', category: '網購' },
+          { name: 'Canva', alias: 'Canva Pro', rate: 3.3, note: 'AI 服務訂閱 3.3%', category: '網購' },
+          { name: 'Perplexity', alias: 'Perplexity AI', rate: 3.3, note: 'AI 服務訂閱 3.3%', category: '網購' },
+          { name: 'Claude', alias: 'Anthropic Claude', rate: 3.3, note: 'AI 服務訂閱 3.3%', category: '網購' }
+        ]
+      },
+
+      '玩旅刷': {
+        name: '玩旅刷',
+        colorClass: 'bg-teal-600 text-white',
+        badgeBg: 'bg-teal-100 text-teal-700 border-teal-200',
+        heroBg: 'bg-teal-700 text-white border-teal-400',
+        limit: '加碼 3% 上限 300 點/月 (刷 NT$ 10,000 封頂)',
+        items: [
+          { name: '海外實體與線上消費', alias: '海外刷卡, 國外刷卡, 日幣, 美金, 歐元, 歐盟交易', rate: 3.3, note: '含歐洲國家實體與線上交易 3.3%', category: '旅遊' },
+
+          { name: '中華航空', alias: '華航, China Airlines', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '長榮航空', alias: 'EVA Air', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '星宇航空', alias: 'Starlux', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '台灣虎航', alias: 'Tigerair', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '國泰航空', alias: 'Cathay Pacific', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '華信航空', alias: 'Mandarin Airlines', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '立榮航空', alias: 'UNI Air', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '樂桃航空', alias: 'Peach', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '阿聯酋航空', alias: 'Emirates', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '亞洲航空', alias: 'AirAsia', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '酷航', alias: 'Scoot', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '捷星航空', alias: 'Jetstar', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '新加坡航空', alias: 'SIA', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '日本航空', alias: 'JAL', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+          { name: '越捷航空', alias: 'VietJet', rate: 3.3, note: '指定航空 3.3%', category: '旅遊' },
+
+          { name: '海外交通 / SUICA', alias: '西瓜卡, ICOCA, PASMO, WOWPASS, AIRSIM, Grab', rate: 3.3, note: '海外交通與電子票證儲值 3.3%', category: '旅遊' },
+
+          { name: 'Klook', alias: '客路', rate: 3.3, note: '訂房旅遊平台 3.3%', category: '旅遊' },
+          { name: 'KKday', alias: '酷游', rate: 3.3, note: '訂房旅遊平台 3.3%', category: '旅遊' },
+          { name: 'Agoda', alias: '安可達', rate: 3.3, note: '訂房旅遊平台 3.3%', category: '旅遊' },
+          { name: 'Booking.com', alias: '繽客', rate: 3.3, note: '訂房旅遊平台 3.3%', category: '旅遊' },
+          { name: 'Trip.com', alias: '攜程', rate: 3.3, note: '訂房旅遊平台 3.3%', category: '旅遊' },
+          { name: 'Airbnb', alias: '愛彼迎', rate: 3.3, note: '訂房旅遊平台 3.3%', category: '旅遊' },
+          { name: 'Hotels.com', alias: '好訂網', rate: 3.3, note: '訂房旅遊平台 3.3%', category: '旅遊' },
+          { name: 'Expedia', alias: '智遊網', rate: 3.3, note: '訂房旅遊平台 3.3%', category: '旅遊' },
+
+          { name: '雄獅旅遊', alias: '雄獅', rate: 3.3, note: '指定旅行社 3.3%', category: '旅遊' },
+          { name: '易遊網', alias: 'ezTravel', rate: 3.3, note: '指定旅行社 3.3%', category: '旅遊' },
+          { name: '東南旅遊', alias: '東南旅行社', rate: 3.3, note: '指定旅行社 3.3%', category: '旅遊' },
+          { name: '可樂旅遊', alias: 'Cola Tour', rate: 3.3, note: '指定旅行社 3.3%', category: '旅遊' },
+          { name: '長汎假期', alias: '長汎旅行社', rate: 3.3, note: '指定旅行社 3.3%', category: '旅遊' },
+          { name: '五福旅遊', alias: '五福', rate: 3.3, note: '指定旅行社 3.3%', category: '旅遊' },
+          { name: '喜鴻假期', alias: '喜鴻', rate: 3.3, note: '指定旅行社 3.3%', category: '旅遊' },
+          { name: '易飛網', alias: 'ezfly', rate: 3.3, note: '指定旅行社 3.3%', category: '旅遊' },
+          { name: '燦星旅遊', alias: '燦星', rate: 3.3, note: '指定旅行社 3.3%', category: '旅遊' },
+          { name: '加利利旅行社', alias: '加利利', rate: 3.3, note: '指定旅行社 3.3%', category: '旅遊' },
+          { name: '鳳凰旅行社', alias: '鳳凰旅遊', rate: 3.3, note: '指定旅行社 3.3%', category: '旅遊' },
+          { name: '山富旅遊', alias: '山富', rate: 3.3, note: '指定旅行社 3.3%', category: '旅遊' }
+        ]
+      },
+
+      '假日刷': {
+        name: '假日刷',
+        colorClass: 'bg-slate-700 text-white',
+        badgeBg: 'bg-slate-100 text-slate-700 border-slate-300',
+        heroBg: 'bg-slate-800 text-white border-slate-500',
+        limit: '加碼 1.7% 上限 1,000 點/月 (刷 NT$ 58,823 封頂)',
+        items: [
+          { name: '六日及國定假日全通路消費', alias: '週末刷卡, 假日消費, 保費, 假日LINE Pay', rate: 2.0, note: '國定假日/週六日不限通路 2% (含保費及LINE Pay/全盈+Pay)', category: '一般' }
+        ]
+      }
+    };
+
+    // Red flag non-reward list
+    const RED_FLAG_STORES = [
+      { name: '全聯福利中心', alias: '全聯, PXMart', note: '❌ 台新 Richart 全方案皆無點數回饋！(建議改用其他全聯專用卡)' },
+      { name: '公用事業代扣繳', alias: '水費, 電費, 瓦斯費, 中華電信費, 學雜費, 規費', note: '❌ 公用事業費用屬無回饋項目！' },
+      { name: '超商實體卡直刷', alias: '7-11直刷, 全家直刷, 超商感應', note: '⚠️ 7-11 / 全家 實體卡或 Apple Pay 直刷 0% 回饋！必須綁定【台新 Pay】！' }
+    ];
+
+    /* ==========================================================================
+       2. APP STATE MANAGEMENT
+       ========================================================================== */
+    let appState = {
+      level2: true,
+      todayPlan: '未選取', // Today's plan
+      todayDate: '',
+      isHoliday: false,
+      manualHolidayOverride: false,
+      calcItems: [],
+      customStores: []
+    };
+
+    // Taiwan Public Holidays (2026 dynamic fallback)
+    const TAIWAN_HOLIDAYS_2026 = [
+      '2026-01-01', // 元旦
+      '2026-02-16', '2026-02-17', '2026-02-18', '2026-02-19', '2026-02-20', // 春節
+      '2026-02-28', // 228
+      '2026-04-03', '2026-04-04', '2026-04-05', // 清明兒童
+      '2026-06-19', // 端午
+      '2026-09-25', // 中秋
+      '2026-10-10'  // 國慶
+    ];
+
+    /* ==========================================================================
+       3. INITIALIZATION & STORAGE
+       ========================================================================== */
+    window.onload = function() {
+      loadStateFromStorage();
+      detectHoliday();
+      renderShortcutPills();
+      renderTodayPlanModalOptions();
+      renderAccordionSummary();
+      updateHeaderStatus();
+    };
+
+    function getTodayDateStr() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function detectHoliday() {
+      const todayStr = getTodayDateStr();
+      const now = new Date();
+      const dayOfWeek = now.getDay(); // 0 is Sunday, 6 is Saturday
+      
+      const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+      const isGovHoliday = TAIWAN_HOLIDAYS_2026.includes(todayStr);
+
+      if (appState.manualHolidayOverride) {
+        // Keeps user override
+      } else {
+        appState.isHoliday = isWeekend || isGovHoliday;
+      }
+
+      const badgeEl = document.getElementById('holiday-badge');
+      const textEl = document.getElementById('holiday-text');
+      const overrideDesc = document.getElementById('holiday-override-desc');
+
+      if (appState.isHoliday) {
+        badgeEl.className = "inline-flex items-center gap-1 text-emerald-600 font-medium";
+        textEl.innerText = appState.manualHolidayOverride ? "今日為假日 (手動開啟)" : "今日為假日 (自動偵測)";
+      } else {
+        badgeEl.className = "inline-flex items-center gap-1 text-slate-500 font-medium";
+        textEl.innerText = appState.manualHolidayOverride ? "平日狀態 (手動關閉)" : "平日狀態 (自動偵測)";
+      }
+
+      if (overrideDesc) {
+        overrideDesc.innerText = appState.manualHolidayOverride ? `手動設定: ${appState.isHoliday ? '假日' : '平日'}` : "目前狀態：自動偵測";
+      }
+    }
+
+    function loadStateFromStorage() {
+      const todayStr = getTodayDateStr();
+      appState.todayDate = todayStr;
+
+      // Saved level 2
+      const savedL2 = localStorage.getItem('richart_v4_level2');
+      if (savedL2 !== null) appState.level2 = (savedL2 === 'true');
+      document.getElementById('setting-level2').checked = appState.level2;
+
+      // Saved today plan (bind to date)
+      const savedPlanDate = localStorage.getItem('richart_v4_plan_date');
+      if (savedPlanDate === todayStr) {
+        appState.todayPlan = localStorage.getItem('richart_v4_today_plan') || '未選取';
+      } else {
+        // Reset across days
+        appState.todayPlan = '未選取';
+        localStorage.setItem('richart_v4_plan_date', todayStr);
+        localStorage.setItem('richart_v4_today_plan', '未選取');
+      }
+
+      // Saved custom stores
+      const savedCustom = localStorage.getItem('richart_v4_custom_stores');
+      if (savedCustom) {
+        try { appState.customStores = JSON.parse(savedCustom); } catch(e){}
+      }
+      renderCustomStoresList();
+    }
+
+    function saveStateToStorage() {
+      localStorage.setItem('richart_v4_level2', appState.level2);
+      localStorage.setItem('richart_v4_plan_date', appState.todayDate);
+      localStorage.setItem('richart_v4_today_plan', appState.todayPlan);
+      localStorage.setItem('richart_v4_custom_stores', JSON.stringify(appState.customStores));
+    }
+
+    function updateHeaderStatus() {
+      document.getElementById('status-plan-name').innerText = appState.todayPlan;
+    }
+
+    /* ==========================================================================
+       4. SEARCH ENGINE & HERO CARD GENERATOR (3-Second Checkout)
+       ========================================================================== */
+    const HOT_SHORTCUTS = [
+      { name: '7-11/全家', q: '7-11' },
+      { name: '全臺餐飲', q: '全臺餐飲' },
+      { name: '手搖飲', q: '50嵐' },
+      { name: 'LINE Pay', q: 'LINE Pay' },
+      { name: '蝦皮/momo', q: '蝦皮' },
+      { name: '高鐵/交通', q: '高鐵' },
+      { name: '加油充電', q: '中油' },
+      { name: '百貨/居家', q: '新光三越' },
+      { name: '海外/機票', q: '海外' }
+    ];
+
+    function renderShortcutPills() {
+      const container = document.getElementById('shortcut-pills-container');
+      let html = '';
+
+      // Custom pinned stores
+      const pinned = appState.customStores.filter(s => s.pinned);
+      pinned.forEach(p => {
+        html += `
+          <button onclick="setSearchQuery('${p.name}')" class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold whitespace-nowrap flex items-center gap-1 hover:bg-amber-100 transition-colors">
+            <span>⭐</span> ${p.name}
+          </button>
+        `;
+      });
+
+      // Default Hot shortcuts
+      HOT_SHORTCUTS.forEach(s => {
+        html += `
+          <button onclick="setSearchQuery('${s.q}')" class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/80 text-xs font-semibold whitespace-nowrap transition-colors">
+            ${s.name}
+          </button>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function setSearchQuery(q) {
+      const input = document.getElementById('search-input');
+      input.value = q;
+      onSearchInput(q);
+    }
+
+    function clearSearch() {
+      const input = document.getElementById('search-input');
+      input.value = '';
+      onSearchInput('');
+      input.focus();
+    }
+
+    function filterByCategory(cat) {
+      if (cat === '餐飲') setSearchQuery('全臺餐飲');
+      else if (cat === '飲料') setSearchQuery('50嵐');
+      else if (cat === '網購') setSearchQuery('蝦皮');
+      else if (cat === '超商') setSearchQuery('7-11');
+      else if (cat === '百貨') setSearchQuery('新光三越');
+      else if (cat === '旅遊') setSearchQuery('海外');
+      else if (cat === '交通') setSearchQuery('高鐵');
+      else if (cat === '一般') setSearchQuery('LINE Pay');
+    }
+
+    function onSearchInput(val) {
+      const clearBtn = document.getElementById('btn-clear-search');
+      const emptyGuide = document.getElementById('empty-search-guide');
+      const slot = document.getElementById('dynamic-results-slot');
+
+      const query = val.trim().toLowerCase();
+
+      if (!query) {
+        clearBtn.classList.add('hidden');
+        emptyGuide.classList.remove('hidden');
+        slot.innerHTML = '';
+        return;
+      }
+
+      clearBtn.classList.remove('hidden');
+      emptyGuide.classList.add('hidden');
+
+      // Execute Fuzzy Match against Full Database
+      const results = queryDatabase(query);
+      renderSearchResults(results, query);
+    }
+
+    function queryDatabase(q) {
+      const matches = [];
+
+      // Check Red Flag Warning stores
+      RED_FLAG_STORES.forEach(rf => {
+        if (rf.name.toLowerCase().includes(q) || rf.alias.toLowerCase().includes(q)) {
+          matches.push({
+            isRedFlag: true,
+            name: rf.name,
+            note: rf.note,
+            rate: 0
+          });
+        }
+      });
+
+      // Check Custom User Stores
+      appState.customStores.forEach(cs => {
+        const nameMatch = cs.name.toLowerCase().includes(q);
+        const aliasMatch = cs.alias && cs.alias.toLowerCase().includes(q);
+        if (nameMatch || aliasMatch) {
+          matches.push({
+            isCustom: true,
+            planName: cs.plan,
+            name: cs.name,
+            rate: parseFloat(cs.rate) || 0.3,
+            note: cs.note || '自訂店家',
+            category: '自訂'
+          });
+        }
+      });
+
+      // Check All 8 Main Plans
+      Object.keys(TAISHIN_PLANS).forEach(planKey => {
+        const plan = TAISHIN_PLANS[planKey];
+        plan.items.forEach(item => {
+          const nameMatch = item.name.toLowerCase().includes(q);
+          const aliasMatch = item.alias && item.alias.toLowerCase().includes(q);
+          const planMatch = plan.name.toLowerCase().includes(q);
+
+          if (nameMatch || aliasMatch || planMatch) {
+            let actualRate = item.rate;
+
+            // Apply Level 2 discount if disabled
+            if (!appState.level2) {
+              actualRate = 0.3;
+            }
+
+            matches.push({
+              planName: plan.name,
+              colorClass: plan.colorClass,
+              heroBg: plan.heroBg,
+              badgeBg: plan.badgeBg,
+              limit: plan.limit,
+              name: item.name,
+              rate: actualRate,
+              note: item.note,
+              category: item.category
+            });
+          }
+        });
+      });
+
+      // If today is Holiday and no specific plan rate beats Holiday 2%, add Holiday 2% option
+      if (appState.isHoliday && appState.level2) {
+        matches.push({
+          planName: '假日刷',
+          colorClass: TAISHIN_PLANS['假日刷'].colorClass,
+          heroBg: TAISHIN_PLANS['假日刷'].heroBg,
+          badgeBg: TAISHIN_PLANS['假日刷'].badgeBg,
+          limit: TAISHIN_PLANS['假日刷'].limit,
+          name: '假日全通路加碼',
+          rate: 2.0,
+          note: '今日自動判定為假日！週六/日/國定假日全通路享 2%',
+          category: '假日'
+        });
+      }
+
+      // Default base 0.3% fallback if match list empty
+      if (matches.length === 0) {
+        matches.push({
+          planName: '一般消費',
+          colorClass: 'bg-slate-700 text-white',
+          heroBg: 'bg-slate-800 text-white border-slate-600',
+          badgeBg: 'bg-slate-100 text-slate-700',
+          limit: '無加碼上限',
+          name: q,
+          rate: appState.level2 ? (appState.isHoliday ? 2.0 : 0.3) : 0.3,
+          note: appState.isHoliday ? '查無特定通路！今日假日刷卡享 2% 回饋' : '未在 8 大指定高回饋通路中，享有基本 0.3% 回饋',
+          category: '一般'
+        });
+      }
+
+      // Sort matches by Rate Descending
+      matches.sort((a, b) => b.rate - a.rate);
+      return matches;
+    }
+
+    function renderSearchResults(results, query) {
+      const slot = document.getElementById('dynamic-results-slot');
+      let html = '';
+
+      // Check for Red Flags
+      const redFlags = results.filter(r => r.isRedFlag);
+      if (redFlags.length > 0) {
+        redFlags.forEach(rf => {
+          html += `
+            <div class="bg-red-50 border-2 border-red-500 rounded-2xl p-4 space-y-2 shadow-md">
+              <div class="flex items-center gap-2 text-taishin font-black text-base">
+                <span>⛔ 警示通路：${rf.name}</span>
+              </div>
+              <p class="text-xs text-red-700 font-bold leading-relaxed">${rf.note}</p>
+            </div>
+          `;
+        });
+      }
+
+      const validResults = results.filter(r => !r.isRedFlag);
+      if (validResults.length === 0) {
+        slot.innerHTML = html;
+        return;
+      }
+
+      // BEST Match (HERO CARD)
+      const best = validResults[0];
+      const bestPlan = best.planName;
+      const isTodayPlanMatched = (appState.todayPlan === bestPlan);
+
+      // Contrast Warning Calculation
+      let contrastAlertHtml = '';
+      if (appState.todayPlan !== '未選取' && !isTodayPlanMatched) {
+        // Find rate for currently selected today plan for this store
+        const currentSelectedMatch = validResults.find(r => r.planName === appState.todayPlan);
+        const currentRate = currentSelectedMatch ? currentSelectedMatch.rate : (appState.isHoliday ? 2.0 : 0.3);
+        const diff = (best.rate - currentRate).toFixed(1);
+
+        if (diff > 0) {
+          contrastAlertHtml = `
+            <div class="bg-amber-400 text-slate-900 rounded-xl p-2.5 text-xs font-bold flex items-center justify-between shadow-sm">
+              <span class="flex items-center gap-1">
+                <span>⚠️</span> 今日已切【${appState.todayPlan}】(${currentRate}%)
+              </span>
+              <span class="bg-slate-900 text-amber-300 px-2 py-0.5 rounded-md font-black">
+                切換至【${bestPlan}】可多賺 ${diff}%
+              </span>
+            </div>
+          `;
+        }
+      }
+
+      // HERO CARD HTML
+      html += `
+        <div class="rounded-3xl p-5 shadow-xl space-y-4 border-2 ${best.heroBg || 'bg-slate-900 text-white border-slate-700'}">
+          ${contrastAlertHtml}
+
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${best.badgeBg || 'bg-white/20 text-white'}">
+                <span>💡 最佳推薦方案</span>
+                <span>•</span>
+                <span>${best.planName}</span>
+              </div>
+              <h2 class="text-xl font-extrabold mt-2 tracking-tight">${best.name}</h2>
+            </div>
+            
+            <div class="text-right">
+              <div class="text-4xl font-black tracking-tighter text-amber-300 drop-shadow-sm">
+                ${best.rate}%
+              </div>
+              <div class="text-[10px] opacity-80 font-medium">台新 Point</div>
+            </div>
+          </div>
+
+          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 space-y-1 text-xs">
+            <div class="font-bold flex items-center gap-1">
+              <span>💳 支付限制與提醒：</span>
+            </div>
+            <p class="leading-relaxed opacity-95">${best.note}</p>
+            ${best.limit ? `<div class="text-[10px] opacity-75 pt-1 border-t border-white/10 mt-1">上限說明：${best.limit}</div>` : ''}
+          </div>
+
+          <!-- Quick Action Button -->
+          <div class="pt-1">
+            <button onclick="setTodayPlan('${bestPlan}')" class="w-full py-3 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-md transition-transform active:scale-95 ${
+              isTodayPlanMatched 
+                ? 'bg-emerald-500 text-white border border-emerald-400' 
+                : 'bg-white text-slate-900 hover:bg-slate-100'
+            }">
+              ${isTodayPlanMatched ? '✅ 今日已切此方案' : `📌 設為今日已切【${bestPlan}】`}
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Secondary Alternative Options
+      if (validResults.length > 1) {
+        html += `
+          <div class="pt-2 space-y-2">
+            <div class="text-xs font-bold text-slate-500 px-1">其他次佳/備選方案 (${validResults.length - 1})</div>
+        `;
+
+        for (let i = 1; i < validResults.length; i++) {
+          const item = validResults[i];
+          html += `
+            <div class="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${item.badgeBg || 'bg-slate-100 text-slate-700'}">${item.planName}</span>
+                  <span class="font-bold text-xs text-slate-800">${item.name}</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mt-1">${item.note}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-base font-black text-slate-900">${item.rate}%</div>
+                <button onclick="setTodayPlan('${item.planName}')" class="text-[10px] text-taishin font-bold hover:underline">
+                  切換此方案
+                </button>
+              </div>
+            </div>
+          `;
+        }
+        html += `</div>`;
+      }
+
+      slot.innerHTML = html;
+    }
+
+    /* ==========================================================================
+       5. TAB 2: MULTI-ITEM CALCULATOR (單筆無條件捨去點數計算)
+       ========================================================================== */
+    function onCalcStoreSelectChange() {
+      const select = document.getElementById('calc-store-select');
+      const val = select.value;
+      if (!val) return;
+      document.getElementById('calc-name').value = val;
+    }
+
+    function addCalcItem() {
+      const nameInput = document.getElementById('calc-name');
+      const amountInput = document.getElementById('calc-amount');
+
+      const name = nameInput.value.trim() || '未命名消費';
+      const amount = parseFloat(amountInput.value);
+
+      if (!amount || amount <= 0) {
+        alert('請輸入有效的金額！');
+        return;
+      }
+
+      appState.calcItems.push({
+        id: Date.now(),
+        name: name,
+        amount: amount
+      });
+
+      nameInput.value = '';
+      amountInput.value = '';
+      document.getElementById('calc-store-select').value = '';
+
+      renderCalcItems();
+    }
+
+    function removeCalcItem(id) {
+      appState.calcItems = appState.calcItems.filter(i => i.id !== id);
+      renderCalcItems();
+    }
+
+    function clearCalcItems() {
+      appState.calcItems = [];
+      renderCalcItems();
+    }
+
+    function renderCalcItems() {
+      const listEl = document.getElementById('calc-items-list');
+      const summaryCard = document.getElementById('calc-summary-card');
+
+      if (appState.calcItems.length === 0) {
+        listEl.innerHTML = `<div class="text-xs text-slate-400 text-center py-2">尚未加入任何消費項目</div>`;
+        summaryCard.classList.add('hidden');
+        return;
+      }
+
+      let html = '';
+      appState.calcItems.forEach((item, index) => {
+        html += `
+          <div class="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-xl text-xs">
+            <div class="font-medium text-slate-800">
+              <span class="text-slate-400 mr-1">#${index+1}</span> ${item.name}
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-black text-slate-900">NT$ ${item.amount.toLocaleString()}</span>
+              <button onclick="removeCalcItem(${item.id})" class="text-slate-400 hover:text-red-500 font-bold">✕</button>
+            </div>
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+
+      calculateBestPlanRanks();
+    }
+
+    function calculateBestPlanRanks() {
+      const summaryCard = document.getElementById('calc-summary-card');
+      const ranksEl = document.getElementById('calc-plan-ranks');
+      summaryCard.classList.remove('hidden');
+
+      // Calculate total points for each plan based on items
+      const planTotals = {};
+      Object.keys(TAISHIN_PLANS).forEach(pk => {
+        planTotals[pk] = 0;
+      });
+
+      appState.calcItems.forEach(item => {
+        // Query item matches
+        const matches = queryDatabase(item.name);
+
+        Object.keys(TAISHIN_PLANS).forEach(pk => {
+          const matchedPlanItem = matches.find(m => m.planName === pk);
+          let rate = matchedPlanItem ? matchedPlanItem.rate : (appState.isHoliday ? 2.0 : 0.3);
+          if (!appState.level2) rate = 0.3;
+
+          // Taishin rule: Math.floor(Amount * (Rate / 100)) per transaction
+          const pts = Math.floor(item.amount * (rate / 100));
+          planTotals[pk] += pts;
+        });
+      });
+
+      // Rank plans by total points
+      const sortedPlans = Object.keys(planTotals).map(pk => ({
+        planName: pk,
+        points: planTotals[pk]
+      })).sort((a, b) => b.points - a.points);
+
+      let ranksHtml = '';
+      const topPoints = sortedPlans[0].points;
+
+      sortedPlans.forEach((sp, idx) => {
+        const isTop = (idx === 0 && topPoints > 0);
+        ranksHtml += `
+          <div class="p-3 rounded-xl border flex items-center justify-between ${isTop ? 'bg-red-50 border-taishin text-taishin' : 'bg-slate-50 border-slate-200 text-slate-700'}">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full font-black text-xs flex items-center justify-center ${isTop ? 'bg-taishin text-white' : 'bg-slate-200 text-slate-600'}">
+                ${idx + 1}
+              </span>
+              <div>
+                <span class="font-bold text-xs">${sp.planName}</span>
+                ${isTop ? '<span class="ml-1 text-[10px] bg-taishin text-white px-1.5 py-0.5 rounded font-bold">最高收益</span>' : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="text-right">
+                <span class="text-base font-black">${sp.points}</span>
+                <span class="text-[10px] opacity-75"> 點</span>
+              </div>
+              <button onclick="setTodayPlan('${sp.planName}')" class="px-2 py-1 text-[10px] bg-white border rounded font-bold hover:bg-slate-100">
+                切此方案
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      ranksEl.innerHTML = ranksHtml;
+    }
+
+    /* ==========================================================================
+       6. TAB 3: CUSTOM STORES MANAGEMENT
+       ========================================================================== */
+    function saveCustomStore(e) {
+      e.preventDefault();
+      const name = document.getElementById('cust-name').value.trim();
+      const alias = document.getElementById('cust-alias').value.trim();
+      const plan = document.getElementById('cust-plan').value;
+      const rate = parseFloat(document.getElementById('cust-rate').value) || 0.3;
+      const note = document.getElementById('cust-note').value.trim();
+      const pin = document.getElementById('cust-pin').checked;
+
+      if (!name) return;
+
+      const newStore = {
+        id: Date.now(),
+        name,
+        alias,
+        plan,
+        rate,
+        note,
+        pinned: pin
+      };
+
+      appState.customStores.push(newStore);
+      saveStateToStorage();
+
+      // Reset form
+      document.getElementById('cust-name').value = '';
+      document.getElementById('cust-alias').value = '';
+      document.getElementById('cust-note').value = '';
+      document.getElementById('cust-pin').checked = false;
+
+      renderCustomStoresList();
+      renderShortcutPills();
+      alert('已成功新增自訂店家！');
+    }
+
+    function deleteCustomStore(id) {
+      appState.customStores = appState.customStores.filter(s => s.id !== id);
+      saveStateToStorage();
+      renderCustomStoresList();
+      renderShortcutPills();
+    }
+
+    function renderCustomStoresList() {
+      const listEl = document.getElementById('custom-stores-list');
+      if (!listEl) return;
+
+      if (appState.customStores.length === 0) {
+        listEl.innerHTML = `<div class="text-xs text-slate-400 py-2 text-center">尚未新增任何自訂店家</div>`;
+        return;
+      }
+
+      let html = '';
+      appState.customStores.forEach(cs => {
+        html += `
+          <div class="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+            <div>
+              <div class="flex items-center gap-1.5 font-bold text-slate-900">
+                ${cs.pinned ? '<span class="text-amber-500">⭐</span>' : ''}
+                <span>${cs.name}</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${cs.plan}</span>
+              </div>
+              <div class="text-[11px] text-slate-500 mt-0.5">
+                別名: ${cs.alias || '無'} | 備註: ${cs.note || '無'}
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-black text-taishin text-sm">${cs.rate}%</span>
+              <button onclick="deleteCustomStore(${cs.id})" class="text-slate-400 hover:text-red-500 font-bold">🗑️</button>
+            </div>
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+    }
+
+    /* ==========================================================================
+       7. TAB 4: SUMMARY ACCORDION DIRECTORY
+       ========================================================================== */
+    function renderAccordionSummary() {
+      const container = document.getElementById('plans-accordion-container');
+      const calcStoreSelect = document.getElementById('calc-store-select');
+      let html = '';
+      let selectHtml = '<option value="">-- 或選擇預設通路 --</option>';
+
+      Object.keys(TAISHIN_PLANS).forEach(pk => {
+        const plan = TAISHIN_PLANS[pk];
+        html += `
+          <details class="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden group">
+            <summary class="p-3.5 bg-white cursor-pointer flex items-center justify-between font-bold text-slate-900 text-xs hover:bg-slate-50 transition-colors">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded-md text-[11px] ${plan.badgeBg}">${plan.name}</span>
+                <span>${plan.items.length} 個通路項目</span>
+              </div>
+              <span class="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+            </summary>
+            <div class="p-3 border-t border-slate-200 space-y-2 text-xs">
+              <div class="text-[11px] text-slate-500 font-medium">封頂限制: ${plan.limit}</div>
+              <div class="grid grid-cols-1 gap-1.5">
+        `;
+
+        plan.items.forEach(item => {
+          selectHtml += `<option value="${item.name}">${item.name} (${plan.name} ${item.rate}%)</option>`;
+          html += `
+            <div class="p-2 bg-white rounded-lg border border-slate-200/80 flex items-center justify-between">
+              <div>
+                <span class="font-bold text-slate-800">${item.name}</span>
+                <div class="text-[10px] text-slate-500">${item.note}</div>
+              </div>
+              <span class="font-black text-slate-900">${item.rate}%</span>
+            </div>
+          `;
+        });
+
+        html += `
+              </div>
+            </div>
+          </details>
+        `;
+      });
+
+      container.innerHTML = html;
+      if (calcStoreSelect) calcStoreSelect.innerHTML = selectHtml;
+    }
+
+    /* ==========================================================================
+       8. MODAL & TAB CONTROLLERS
+       ========================================================================== */
+    function switchTab(tabId) {
+      ['search', 'calc', 'custom', 'summary'].forEach(t => {
+        const section = document.getElementById(`tab-${t}`);
+        const navBtn = document.getElementById(`nav-btn-${t}`);
+        if (t === tabId) {
+          section.classList.remove('hidden');
+          navBtn.className = "flex flex-col items-center justify-center text-taishin font-bold transition-colors";
+        } else {
+          section.classList.add('hidden');
+          navBtn.className = "flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 transition-colors";
+        }
+      });
+    }
+
+    function openSettingsModal() {
+      document.getElementById('modal-settings').classList.remove('hidden');
+    }
+    function closeSettingsModal() {
+      document.getElementById('modal-settings').classList.add('hidden');
+    }
+
+    function openTodayPlanModal() {
+      document.getElementById('modal-today-plan').classList.remove('hidden');
+    }
+    function closeTodayPlanModal() {
+      document.getElementById('modal-today-plan').classList.add('hidden');
+    }
+
+    function renderTodayPlanModalOptions() {
+      const grid = document.getElementById('today-plan-options-grid');
+      let html = '';
+      Object.keys(TAISHIN_PLANS).forEach(pk => {
+        const plan = TAISHIN_PLANS[pk];
+        html += `
+          <button onclick="setTodayPlan('${pk}')" class="p-3 rounded-xl border text-center transition-all ${
+            appState.todayPlan === pk ? 'bg-taishin text-white font-black border-taishin shadow-md' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+          }">
+            ${pk}
+          </button>
+        `;
+      });
+      grid.innerHTML = html;
+    }
+
+    function setTodayPlan(planName) {
+      appState.todayPlan = planName;
+      saveStateToStorage();
+      updateHeaderStatus();
+      renderTodayPlanModalOptions();
+      closeTodayPlanModal();
+
+      // Trigger re-search if there's text
+      const searchVal = document.getElementById('search-input').value;
+      if (searchVal) onSearchInput(searchVal);
+    }
+
+    function resetTodayPlan() {
+      setTodayPlan('未選取');
+      closeSettingsModal();
+      alert('已重置今日切換方案紀錄！');
+    }
+
+    function toggleLevel2(checked) {
+      appState.level2 = checked;
+      saveStateToStorage();
+      const searchVal = document.getElementById('search-input').value;
+      if (searchVal) onSearchInput(searchVal);
+    }
+
+    function toggleHolidayOverride() {
+      appState.manualHolidayOverride = true;
+      appState.isHoliday = !appState.isHoliday;
+      detectHoliday();
+      const searchVal = document.getElementById('search-input').value;
+      if (searchVal) onSearchInput(searchVal);
+    }
+
+    /* Backup JSON Export & Import */
+    function exportCustomBackup() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState.customStores, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `Taishin_Richart_Custom_Stores_${getTodayDateStr()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importCustomBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            appState.customStores = imported;
+            saveStateToStorage();
+            renderCustomStoresList();
+            renderShortcutPills();
+            alert('成功匯入自訂店家數據！');
+            closeSettingsModal();
+          } else {
+            alert('JSON 格式不符！');
+          }
+        } catch(err) {
+          alert('解析 JSON 檔案失敗');
+        }
+      };
+      reader.readAsText(file);
+    }
+  </script>
+</body>
+</html>
